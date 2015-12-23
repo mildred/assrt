@@ -32,8 +32,17 @@ func (ast *Assert) MustNotNil(value interface {}, logs ...interface {}) {
 	ast.nilAssert(true, false, value, logs...)
 }
 
-func (ast *Assert) nilAssert(fatal bool, isNil bool, value interface {}, logs ...interface {}) {
-	if isNil != (value == nil || reflect.ValueOf(value).IsNil()) {
+func valueIsNil(value reflect.Value, isNil bool) bool {
+	switch value.Kind() {
+	default:
+		return false
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.UnsafePointer, reflect.Slice:
+		return value.IsNil() == isNil
+	}
+}
+
+func (ast *Assert) nilAssert(fatal bool, isNil bool, value interface{}, logs ...interface{}) {
+	if isNil != (value == nil) || valueIsNil(reflect.ValueOf(value), isNil) {
 		ast.logCaller()
 		if len(logs) > 0 {
 			ast.Log(logs...)
